@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import GoogleSignInButton from '../../components/common/GoogleSignInButton'
 import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
@@ -70,8 +71,20 @@ export default function RegisterPage() {
           <p className="mt-2 text-gray-600">Join our community of photographers</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="card p-8 space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="card p-8 space-y-6">
+          <GoogleSignInButton />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or register with email</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
             <Input
               label="First name"
               type="text"
@@ -127,9 +140,10 @@ export default function RegisterPage() {
             autoComplete="new-password"
           />
 
-          <Button type="submit" isLoading={isLoading} className="w-full">
-            Create account
-          </Button>
+            <Button type="submit" isLoading={isLoading} className="w-full">
+              Create account
+            </Button>
+          </form>
 
           <p className="text-center text-sm text-gray-600">
             Already have an account?{' '}
@@ -144,7 +158,7 @@ export default function RegisterPage() {
             {' '}and{' '}
             <Link to="/privacy" className="link">Privacy Policy</Link>
           </p>
-        </form>
+        </div>
       </div>
     </div>
   )

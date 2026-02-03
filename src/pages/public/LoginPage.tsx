@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import GoogleSignInButton from '../../components/common/GoogleSignInButton'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -58,17 +59,29 @@ export default function LoginPage() {
           <p className="mt-2 text-gray-600">Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="card p-8 space-y-6">
-          <Input
-            label="Email"
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            error={errors.email}
-            placeholder="you@example.com"
-            autoComplete="email"
-          />
+        <div className="card p-8 space-y-6">
+          <GoogleSignInButton />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
+              label="Email"
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              error={errors.email}
+              placeholder="you@example.com"
+              autoComplete="email"
+            />
 
           <Input
             label="Password"
@@ -87,9 +100,10 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <Button type="submit" isLoading={isLoading} className="w-full">
-            Sign in
-          </Button>
+            <Button type="submit" isLoading={isLoading} className="w-full">
+              Sign in
+            </Button>
+          </form>
 
           <p className="text-center text-sm text-gray-600">
             Don&apos;t have an account?{' '}
@@ -97,7 +111,7 @@ export default function LoginPage() {
               Sign up
             </Link>
           </p>
-        </form>
+        </div>
       </div>
     </div>
   )

@@ -32,4 +32,12 @@ export const authApi = {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
   },
+
+  googleAuth: async (credential: string): Promise<AuthResponse> => {
+    const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/google', { credential })
+    if (!response.data.success || !response.data.data) {
+      throw new Error(response.data.error?.message || 'Google authentication failed')
+    }
+    return response.data.data
+  },
 }

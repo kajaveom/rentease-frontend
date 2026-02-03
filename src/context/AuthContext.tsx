@@ -11,6 +11,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   login: (data: LoginRequest) => Promise<void>
   register: (data: RegisterRequest) => Promise<void>
+  googleLogin: (credential: string) => Promise<void>
   logout: () => void
   updateUser: (user: User) => void
   refreshUser: () => Promise<void>
@@ -61,6 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     toast.success('Account created successfully!')
   }
 
+  const googleLogin = async (credential: string) => {
+    const response = await authApi.googleAuth(credential)
+    localStorage.setItem('accessToken', response.accessToken)
+    localStorage.setItem('refreshToken', response.refreshToken)
+    localStorage.setItem('user', JSON.stringify(response.user))
+    setUser(response.user)
+    toast.success('Welcome!')
+  }
+
   const logout = () => {
     authApi.logout()
     localStorage.removeItem('user')
@@ -91,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         login,
         register,
+        googleLogin,
         logout,
         updateUser,
         refreshUser,
