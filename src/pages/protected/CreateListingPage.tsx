@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listingsApi } from '../../api/listings'
-import { CreateListingRequest, Category, Condition, CATEGORIES, CONDITIONS } from '../../types/listing'
+import { CreateListingRequest, CATEGORIES, CONDITIONS } from '../../types/listing'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import ImageUpload from '../../components/common/ImageUpload'
 import toast from 'react-hot-toast'
 
 export default function CreateListingPage() {
@@ -20,6 +21,7 @@ export default function CreateListingPage() {
     brand: '',
     model: '',
     pickupLocation: '',
+    imageUrls: [],
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -271,7 +273,20 @@ export default function CreateListingPage() {
 
         {step === 3 && (
           <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">Pickup Location</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Photos & Location</h2>
+
+            <div>
+              <label className="label">Photos</label>
+              <p className="text-sm text-gray-500 mb-3">
+                Add up to 5 photos. The first photo will be your primary image.
+              </p>
+              <ImageUpload
+                images={formData.imageUrls || []}
+                onChange={(images) => setFormData((prev) => ({ ...prev, imageUrls: images }))}
+                maxImages={5}
+                type="listing"
+              />
+            </div>
 
             <div>
               <label className="label">Pickup Location</label>
@@ -290,13 +305,26 @@ export default function CreateListingPage() {
 
             <div className="border-t pt-6">
               <h3 className="font-medium text-gray-900 mb-4">Preview</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="font-semibold">{formData.title || 'Your Item Title'}</p>
-                <p className="text-sm text-gray-600 mt-1">
-                  ${(formData.pricePerDay / 100).toFixed(0)}/day
-                  {formData.pickupLocation && ` · ${formData.pickupLocation}`}
-                  {` · ${CONDITIONS.find(c => c.value === formData.condition)?.label}`}
-                </p>
+              <div className="bg-gray-50 rounded-lg p-4 flex gap-4">
+                {formData.imageUrls && formData.imageUrls.length > 0 ? (
+                  <img
+                    src={formData.imageUrls[0]}
+                    alt="Preview"
+                    className="w-24 h-24 object-cover rounded-lg"
+                  />
+                ) : (
+                  <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center text-2xl">
+                    📷
+                  </div>
+                )}
+                <div>
+                  <p className="font-semibold">{formData.title || 'Your Item Title'}</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    ${(formData.pricePerDay / 100).toFixed(0)}/day
+                    {formData.pickupLocation && ` · ${formData.pickupLocation}`}
+                    {` · ${CONDITIONS.find(c => c.value === formData.condition)?.label}`}
+                  </p>
+                </div>
               </div>
             </div>
 

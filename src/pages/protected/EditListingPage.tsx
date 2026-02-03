@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { listingsApi } from '../../api/listings'
-import { Listing, UpdateListingRequest, Category, Condition, CATEGORIES, CONDITIONS } from '../../types/listing'
+import { Listing, UpdateListingRequest, CATEGORIES, CONDITIONS } from '../../types/listing'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import ImageUpload from '../../components/common/ImageUpload'
 import Spinner from '../../components/common/Spinner'
 import toast from 'react-hot-toast'
 
@@ -34,6 +35,7 @@ export default function EditListingPage() {
           model: data.model || '',
           pickupLocation: data.pickupLocation,
           available: data.available,
+          imageUrls: data.images.map((img) => img.imageUrl),
         })
       } catch (error) {
         console.error('Failed to fetch listing:', error)
@@ -312,28 +314,18 @@ export default function EditListingPage() {
         </div>
 
         {/* Images Section */}
-        {listing.images.length > 0 && (
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Images</h2>
-            <div className="flex gap-4 overflow-x-auto pb-2">
-              {listing.images.map((image) => (
-                <div
-                  key={image.id}
-                  className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-gray-100"
-                >
-                  <img
-                    src={image.imageUrl}
-                    alt="Listing"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-            <p className="mt-3 text-sm text-gray-500">
-              Image management coming soon
-            </p>
-          </div>
-        )}
+        <div className="card p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Photos</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Add up to 5 photos. The first photo will be your primary image.
+          </p>
+          <ImageUpload
+            images={formData.imageUrls || []}
+            onChange={(images) => setFormData((prev) => ({ ...prev, imageUrls: images }))}
+            maxImages={5}
+            type="listing"
+          />
+        </div>
 
         {/* Actions */}
         <div className="flex justify-between items-center pt-4">

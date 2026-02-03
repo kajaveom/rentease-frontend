@@ -62,6 +62,7 @@ export interface CreateListingRequest {
   brand?: string
   model?: string
   pickupLocation: string
+  imageUrls?: string[]
 }
 
 export interface UpdateListingRequest {
@@ -75,6 +76,7 @@ export interface UpdateListingRequest {
   model?: string
   pickupLocation?: string
   available?: boolean
+  imageUrls?: string[]
 }
 
 export const CATEGORIES: { label: string; value: Category; icon: string }[] = [
