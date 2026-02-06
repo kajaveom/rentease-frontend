@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { usersApi } from '../../api/users'
+import { imagesApi } from '../../api/images'
 import { User, UpdateProfileRequest } from '../../types/user'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
@@ -22,6 +23,8 @@ export default function EditProfilePage() {
     avatarUrl: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchUser()
@@ -45,6 +48,34 @@ export default function EditProfilePage() {
       navigate('/profile')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be less than 10MB')
+      return
+    }
+
+    setIsUploadingAvatar(true)
+    try {
+      const url = await imagesApi.uploadAvatar(file)
+      setFormData({ ...formData, avatarUrl: url })
+      toast.success('Avatar uploaded')
+    } catch (error) {
+      toast.error('Failed to upload avatar')
+    } finally {
+      setIsUploadingAvatar(false)
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = ''
+      }
     }
   }
 
@@ -100,37 +131,57 @@ export default function EditProfilePage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-8">Edit Profile</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Avatar Preview */}
+        {/* Avatar Upload */}
         <div className="card p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Photo</h2>
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden">
-              {formData.avatarUrl ? (
-                <img
-                  src={formData.avatarUrl}
-                  alt="Avatar preview"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                  }}
-                />
-              ) : (
-                <span className="text-2xl font-medium text-primary-600">
-                  {formData.firstName?.charAt(0) || '?'}
-                </span>
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden">
+                {formData.avatarUrl ? (
+                  <img
+                    src={formData.avatarUrl}
+                    alt="Avatar preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-3xl font-medium text-primary-600">
+                    {formData.firstName?.charAt(0) || '?'}
+                  </span>
+                )}
+              </div>
+              {isUploadingAvatar && (
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                  <Spinner size="sm" />
+                </div>
               )}
             </div>
             <div className="flex-1">
-              <Input
-                label="Avatar URL"
-                name="avatarUrl"
-                value={formData.avatarUrl}
-                onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
-                placeholder="https://example.com/avatar.jpg"
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAvatarUpload}
+                className="hidden"
+                id="avatar-upload"
               />
-              <p className="mt-1 text-sm text-gray-500">
-                Enter a URL to your profile photo
+              <label
+                htmlFor="avatar-upload"
+                className="btn-primary inline-block cursor-pointer"
+              >
+                {isUploadingAvatar ? 'Uploading...' : 'Upload Photo'}
+              </label>
+              <p className="mt-2 text-sm text-gray-500">
+                JPG, PNG, WebP or GIF. Max 10MB.
               </p>
+              {formData.avatarUrl && (
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, avatarUrl: '' })}
+                  className="mt-2 text-sm text-red-600 hover:text-red-700"
+                >
+                  Remove photo
+                </button>
+              )}
             </div>
           </div>
         </div>

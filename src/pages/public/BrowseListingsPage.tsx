@@ -9,10 +9,22 @@ export default function BrowseListingsPage() {
   const [listings, setListings] = useState<ListingSummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [totalElements, setTotalElements] = useState(0)
+  const [searchInput, setSearchInput] = useState('')
+  const [minPriceInput, setMinPriceInput] = useState('')
+  const [maxPriceInput, setMaxPriceInput] = useState('')
 
   const category = searchParams.get('category') || ''
   const search = searchParams.get('q') || ''
   const sort = searchParams.get('sort') || 'newest'
+  const minPrice = searchParams.get('minPrice') || ''
+  const maxPrice = searchParams.get('maxPrice') || ''
+
+  // Sync inputs with URL params on mount
+  useEffect(() => {
+    setSearchInput(search)
+    setMinPriceInput(minPrice ? String(parseInt(minPrice) / 100) : '')
+    setMaxPriceInput(maxPrice ? String(parseInt(maxPrice) / 100) : '')
+  }, [])
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -21,6 +33,8 @@ export default function BrowseListingsPage() {
         const response = await listingsApi.getListings({
           category: category || undefined,
           q: search || undefined,
+          minPrice: minPrice ? parseInt(minPrice) : undefined,
+          maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
           sort: sort as 'newest' | 'price_asc' | 'price_desc',
         })
         setListings(response.data || [])
@@ -34,7 +48,7 @@ export default function BrowseListingsPage() {
     }
 
     fetchListings()
-  }, [category, search, sort])
+  }, [category, search, sort, minPrice, maxPrice])
 
   const handleCategoryChange = (value: string) => {
     if (value) {
@@ -50,6 +64,43 @@ export default function BrowseListingsPage() {
     setSearchParams(searchParams)
   }
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchInput.trim()) {
+      searchParams.set('q', searchInput.trim())
+    } else {
+      searchParams.delete('q')
+    }
+    setSearchParams(searchParams)
+  }
+
+  const handleClearSearch = () => {
+    setSearchInput('')
+    searchParams.delete('q')
+    setSearchParams(searchParams)
+  }
+
+  const handlePriceFilter = () => {
+    if (minPriceInput) {
+      searchParams.set('minPrice', String(Math.round(parseFloat(minPriceInput) * 100)))
+    } else {
+      searchParams.delete('minPrice')
+    }
+    if (maxPriceInput) {
+      searchParams.set('maxPrice', String(Math.round(parseFloat(maxPriceInput) * 100)))
+    } else {
+      searchParams.delete('maxPrice')
+    }
+    setSearchParams(searchParams)
+  }
+
+  const handleClearFilters = () => {
+    setSearchInput('')
+    setMinPriceInput('')
+    setMaxPriceInput('')
+    setSearchParams(new URLSearchParams())
+  }
+
   const formatPrice = (cents: number) => {
     return `$${(cents / 100).toFixed(0)}`
   }
@@ -58,13 +109,72 @@ export default function BrowseListingsPage() {
     return CATEGORIES.find(c => c.value === value)?.label || value
   }
 
+  const hasActiveFilters = category || search || minPrice || maxPrice
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Search Bar */}
+      <div className="mb-6">
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search for cameras, lenses, audio gear..."
+              className="input pl-10 w-full"
+            />
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            {search && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <button type="submit" className="btn-primary">
+            Search
+          </button>
+        </form>
+        {search && (
+          <p className="text-sm text-gray-600 mt-2">
+            Showing results for "<span className="font-medium">{search}</span>"
+          </p>
+        )}
+      </div>
+
       <div className="flex flex-col md:flex-row gap-8">
         {/* Filters Sidebar */}
         <aside className="w-full md:w-64 flex-shrink-0">
           <div className="card p-4">
-            <h3 className="font-semibold text-gray-900 mb-4">Filters</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold text-gray-900">Filters</h3>
+              {hasActiveFilters && (
+                <button
+                  onClick={handleClearFilters}
+                  className="text-sm text-primary-600 hover:text-primary-700"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
 
             <div className="mb-4">
               <label className="label">Category</label>
@@ -80,6 +190,38 @@ export default function BrowseListingsPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="mb-4">
+              <label className="label">Price Range ($/day)</label>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="number"
+                  value={minPriceInput}
+                  onChange={(e) => setMinPriceInput(e.target.value)}
+                  placeholder="Min"
+                  className="input w-full"
+                  min="0"
+                  step="1"
+                />
+                <span className="text-gray-400">-</span>
+                <input
+                  type="number"
+                  value={maxPriceInput}
+                  onChange={(e) => setMaxPriceInput(e.target.value)}
+                  placeholder="Max"
+                  className="input w-full"
+                  min="0"
+                  step="1"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handlePriceFilter}
+                className="mt-2 text-sm text-primary-600 hover:text-primary-700"
+              >
+                Apply price filter
+              </button>
             </div>
 
             <div className="mb-4">

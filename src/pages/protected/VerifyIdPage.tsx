@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { usersApi } from '../../api/users'
+import { imagesApi } from '../../api/images'
 import { IdVerificationResponse, IdVerificationRequest } from '../../types/user'
 import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/common/Spinner'
@@ -17,6 +19,8 @@ export default function VerifyIdPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Form state
   const [formData, setFormData] = useState<IdVerificationRequest>({
@@ -37,6 +41,34 @@ export default function VerifyIdPage() {
       toast.error('Failed to load verification status')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File must be less than 10MB')
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const url = await imagesApi.uploadIdDocument(file)
+      setFormData({ ...formData, documentUrl: url })
+      toast.success('Document uploaded')
+    } catch (error) {
+      toast.error('Failed to upload document')
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
@@ -97,6 +129,12 @@ export default function VerifyIdPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-6">
+        <Link to="/profile/edit" className="text-primary-600 hover:text-primary-700">
+          &larr; Back to Profile
+        </Link>
+      </div>
+
       <h1 className="text-2xl font-bold text-gray-900 mb-2">ID Verification</h1>
       <p className="text-gray-600 mb-8">
         Verify your identity to build trust with other users and unlock additional features.
@@ -235,22 +273,70 @@ export default function VerifyIdPage() {
             </div>
 
             <div>
-              <label htmlFor="documentUrl" className="block text-sm font-medium text-gray-700 mb-1">
-                Document Image URL
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Document Photo
               </label>
-              <input
-                type="url"
-                id="documentUrl"
-                value={formData.documentUrl}
-                onChange={(e) => setFormData({ ...formData, documentUrl: e.target.value })}
-                placeholder="https://example.com/my-id-photo.jpg"
-                className="input"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Upload your document to a secure image hosting service and paste the URL here.
-                In a production app, this would be a direct file upload.
-              </p>
+              {formData.documentUrl ? (
+                <div className="mb-4">
+                  <div className="relative inline-block">
+                    <img
+                      src={formData.documentUrl}
+                      alt="ID Document Preview"
+                      className="max-w-full max-h-48 rounded-lg border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, documentUrl: '' })}
+                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  {isUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Spinner size="md" />
+                      <p className="text-sm text-gray-600">Uploading...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <svg
+                        className="mx-auto h-10 w-10 text-gray-400"
+                        stroke="currentColor"
+                        fill="none"
+                        viewBox="0 0 48 48"
+                      >
+                        <path
+                          d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <p className="mt-2 text-sm text-gray-600">
+                        <span className="font-medium text-primary-600">Click to upload</span> your ID photo
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        PNG, JPG or WebP up to 10MB
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Guidelines */}
@@ -267,8 +353,8 @@ export default function VerifyIdPage() {
             <div className="pt-4">
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="btn-primary w-full"
+                disabled={isSubmitting || !formData.documentUrl}
+                className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Submitting...' : 'Submit for Verification'}
               </button>

@@ -55,6 +55,7 @@ export default function CreateListingPage() {
     const newErrors: Record<string, string> = {}
     if (formData.pricePerDay < 100) newErrors.pricePerDay = 'Price must be at least $1.00'
     if (formData.depositAmount < 0) newErrors.depositAmount = 'Deposit cannot be negative'
+    if (!formData.pickupLocation.trim()) newErrors.pickupLocation = 'Pickup location is required'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -69,6 +70,7 @@ export default function CreateListingPage() {
   const handleNext = () => {
     if (step === 1 && validateStep1()) setStep(2)
     else if (step === 2 && validateStep2()) setStep(3)
+    else if (step === 3 && validateStep3()) setStep(4)
   }
 
   const handleBack = () => {
@@ -77,7 +79,6 @@ export default function CreateListingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateStep3()) return
 
     setIsLoading(true)
     try {
@@ -100,9 +101,9 @@ export default function CreateListingPage() {
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">List Your Item</h1>
-        <p className="text-gray-600 mt-1">Step {step} of 3</p>
+        <p className="text-gray-600 mt-1">Step {step} of 4</p>
         <div className="mt-4 flex gap-2">
-          {[1, 2, 3].map((s) => (
+          {[1, 2, 3, 4].map((s) => (
             <div
               key={s}
               className={`h-2 flex-1 rounded-full ${
@@ -195,7 +196,7 @@ export default function CreateListingPage() {
 
         {step === 2 && (
           <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">Pricing & Condition</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Pricing, Condition & Location</h2>
 
             <div>
               <label className="label">Price per Day ($)</label>
@@ -260,34 +261,6 @@ export default function CreateListingPage() {
               </div>
             </div>
 
-            <div className="flex justify-between">
-              <Button type="button" variant="secondary" onClick={handleBack}>
-                Back
-              </Button>
-              <Button type="button" onClick={handleNext}>
-                Next: Location
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">Photos & Location</h2>
-
-            <div>
-              <label className="label">Photos</label>
-              <p className="text-sm text-gray-500 mb-3">
-                Add up to 5 photos. The first photo will be your primary image.
-              </p>
-              <ImageUpload
-                images={formData.imageUrls || []}
-                onChange={(images) => setFormData((prev) => ({ ...prev, imageUrls: images }))}
-                maxImages={5}
-                type="listing"
-              />
-            </div>
-
             <div>
               <label className="label">Pickup Location</label>
               <Input
@@ -303,26 +276,124 @@ export default function CreateListingPage() {
               </p>
             </div>
 
-            <div className="border-t pt-6">
-              <h3 className="font-medium text-gray-900 mb-4">Preview</h3>
-              <div className="bg-gray-50 rounded-lg p-4 flex gap-4">
+            <div className="flex justify-between">
+              <Button type="button" variant="secondary" onClick={handleBack}>
+                Back
+              </Button>
+              <Button type="button" onClick={handleNext}>
+                Next: Photos
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold text-gray-900">Photos</h2>
+
+            <div>
+              <label className="label">Add Photos</label>
+              <p className="text-sm text-gray-500 mb-3">
+                Add up to 5 photos. The first photo will be your primary image.
+              </p>
+              <ImageUpload
+                images={formData.imageUrls || []}
+                onChange={(images) => setFormData((prev) => ({ ...prev, imageUrls: images }))}
+                maxImages={5}
+                type="listing"
+              />
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-blue-800 mb-2">Photo tips:</h4>
+              <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
+                <li>Use good lighting to show the item clearly</li>
+                <li>Include photos from multiple angles</li>
+                <li>Show any included accessories</li>
+                <li>Highlight any wear or damage for transparency</li>
+              </ul>
+            </div>
+
+            <div className="flex justify-between">
+              <Button type="button" variant="secondary" onClick={handleBack}>
+                Back
+              </Button>
+              <Button type="button" onClick={handleNext}>
+                Next: Preview
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold text-gray-900">Preview & Publish</h2>
+            <p className="text-gray-600">Review your listing before publishing.</p>
+
+            {/* Preview Card */}
+            <div className="border rounded-lg overflow-hidden">
+              {/* Image */}
+              <div className="aspect-[16/9] bg-gray-100 relative">
                 {formData.imageUrls && formData.imageUrls.length > 0 ? (
                   <img
                     src={formData.imageUrls[0]}
                     alt="Preview"
-                    className="w-24 h-24 object-cover rounded-lg"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center text-2xl">
-                    📷
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <span className="text-6xl">📷</span>
                   </div>
                 )}
-                <div>
-                  <p className="font-semibold">{formData.title || 'Your Item Title'}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    ${(formData.pricePerDay / 100).toFixed(0)}/day
-                    {formData.pickupLocation && ` · ${formData.pickupLocation}`}
-                    {` · ${CONDITIONS.find(c => c.value === formData.condition)?.label}`}
+                {formData.imageUrls && formData.imageUrls.length > 1 && (
+                  <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                    +{formData.imageUrls.length - 1} more
+                  </div>
+                )}
+              </div>
+
+              {/* Details */}
+              <div className="p-4 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-xs text-gray-500 uppercase">
+                      {CATEGORIES.find(c => c.value === formData.category)?.label}
+                    </span>
+                    <h3 className="text-xl font-bold text-gray-900 mt-1">
+                      {formData.title || 'Your Item Title'}
+                    </h3>
+                    {(formData.brand || formData.model) && (
+                      <p className="text-gray-600">
+                        {formData.brand} {formData.model}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-primary-600">
+                      ${(formData.pricePerDay / 100).toFixed(0)}
+                    </p>
+                    <p className="text-sm text-gray-500">per day</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    {CONDITIONS.find(c => c.value === formData.condition)?.label}
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    {formData.pickupLocation}
+                  </span>
+                  {formData.depositAmount > 0 && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      ${(formData.depositAmount / 100).toFixed(0)} deposit
+                    </span>
+                  )}
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="font-medium text-gray-900 mb-2">Description</h4>
+                  <p className="text-gray-600 text-sm whitespace-pre-wrap">
+                    {formData.description || 'No description provided.'}
                   </p>
                 </div>
               </div>
