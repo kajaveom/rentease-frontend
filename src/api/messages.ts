@@ -1,6 +1,6 @@
 import apiClient from './client'
 import { ApiResponse, PaginatedResponse } from '../types/api'
-import { Conversation, Message, SendMessageRequest } from '../types/message'
+import { Conversation, Message } from '../types/message'
 
 export const messagesApi = {
   getConversations: async (page = 0, size = 20): Promise<PaginatedResponse<Conversation>> => {

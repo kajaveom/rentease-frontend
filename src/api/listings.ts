@@ -1,6 +1,7 @@
 import apiClient from './client'
 import { ApiResponse, PaginatedResponse } from '../types/api'
 import { Listing, ListingSummary, CreateListingRequest, UpdateListingRequest } from '../types/listing'
+import { BookedDateRange } from '../types/booking'
 
 export interface ListingsQueryParams {
   category?: string
@@ -78,5 +79,25 @@ export const listingsApi = {
 
   deleteImage: async (listingId: string, imageId: string): Promise<void> => {
     await apiClient.delete(`/listings/${listingId}/images/${imageId}`)
+  },
+
+  getBookedDates: async (listingId: string): Promise<BookedDateRange[]> => {
+    const response = await apiClient.get<ApiResponse<BookedDateRange[]>>(
+      `/listings/${listingId}/booked-dates`
+    )
+    if (!response.data.success || !response.data.data) {
+      throw new Error(response.data.error?.message || 'Failed to fetch booked dates')
+    }
+    return response.data.data
+  },
+
+  getRecentListings: async (limit = 8): Promise<ListingSummary[]> => {
+    const response = await apiClient.get<ApiResponse<ListingSummary[]>>(
+      `/listings/recent?limit=${limit}`
+    )
+    if (!response.data.success || !response.data.data) {
+      throw new Error(response.data.error?.message || 'Failed to fetch recent listings')
+    }
+    return response.data.data
   },
 }

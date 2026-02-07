@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Package } from 'lucide-react'
 import { listingsApi } from '../../api/listings'
 import { ListingSummary } from '../../types/listing'
 import Button from '../../components/common/Button'
@@ -74,7 +75,9 @@ export default function MyListingsPage() {
 
       {listings.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-6xl mb-4">📦</div>
+          <div className="mb-4 flex justify-center text-gray-300">
+            <Package size={80} />
+          </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">No listings yet</h2>
           <p className="text-gray-600 mb-6">
             Start earning by listing your items for rent
@@ -95,8 +98,8 @@ export default function MyListingsPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <span className="text-2xl">📦</span>
+                  <div className="w-full h-full flex items-center justify-center text-gray-300">
+                    <Package size={32} />
                   </div>
                 )}
               </div>

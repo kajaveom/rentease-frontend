@@ -1,6 +1,6 @@
 import apiClient from './client'
 import { ApiResponse, PaginatedResponse } from '../types/api'
-import { Review, CreateReviewRequest, ReviewResponseRequest, ReviewStats } from '../types/review'
+import { Review, CreateReviewRequest, ReviewStats } from '../types/review'
 
 export const reviewsApi = {
   createReview: async (bookingId: string, data: CreateReviewRequest): Promise<Review> => {

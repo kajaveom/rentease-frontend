@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Camera } from 'lucide-react'
 import { listingsApi } from '../../api/listings'
 import { CreateListingRequest, CATEGORIES, CONDITIONS } from '../../types/listing'
 import Button from '../../components/common/Button'
@@ -129,7 +130,7 @@ export default function CreateListingPage() {
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat.value} value={cat.value}>
-                    {cat.icon} {cat.label}
+                    {cat.label}
                   </option>
                 ))}
               </select>
@@ -211,12 +212,12 @@ export default function CreateListingPage() {
                 step="0.01"
               />
               <p className="mt-1 text-sm text-gray-500">
-                Set a competitive price for your area
+                Payment is arranged directly with renter
               </p>
             </div>
 
             <div>
-              <label className="label">Security Deposit ($)</label>
+              <label className="label">Suggested Deposit ($) - Optional</label>
               <Input
                 type="number"
                 name="depositAmount"
@@ -228,7 +229,7 @@ export default function CreateListingPage() {
                 step="0.01"
               />
               <p className="mt-1 text-sm text-gray-500">
-                Recommended: 20-30% of item value
+                Deposit you'll collect directly from renter at pickup
               </p>
             </div>
 
@@ -341,8 +342,8 @@ export default function CreateListingPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <span className="text-6xl">📷</span>
+                  <div className="w-full h-full flex items-center justify-center text-gray-300">
+                    <Camera size={80} />
                   </div>
                 )}
                 {formData.imageUrls && formData.imageUrls.length > 1 && (

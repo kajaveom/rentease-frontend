@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { messagesApi } from '../../api/messages'
 import { Conversation, Message } from '../../types/message'
 import { useAuth } from '../../context/AuthContext'
+import { useWebSocket } from '../../hooks/useWebSocket'
 import Button from '../../components/common/Button'
 import Spinner from '../../components/common/Spinner'
 import toast from 'react-hot-toast'
@@ -15,8 +16,44 @@ export default function ConversationPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
   const [newMessage, setNewMessage] = useState('')
+  const [isTyping, setIsTyping] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
+
+  // Handle incoming WebSocket message
+  const handleWebSocketMessage = useCallback((message: Message) => {
+    setMessages((prev) => {
+      // Avoid duplicates
+      if (prev.some((m) => m.id === message.id)) return prev
+      return [...prev, message]
+    })
+  }, [])
+
+  // Handle typing indicator
+  const handleTyping = useCallback((data: { userId: string; firstName: string }) => {
+    if (data.userId !== user?.id) {
+      setIsTyping(data.firstName)
+      // Clear typing indicator after 3 seconds
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+      typingTimeoutRef.current = setTimeout(() => setIsTyping(null), 3000)
+    }
+  }, [user?.id])
+
+  // Handle read receipt
+  const handleRead = useCallback(() => {
+    setMessages((prev) =>
+      prev.map((m) => (m.sender.id === user?.id ? { ...m, isRead: true } : m))
+    )
+  }, [user?.id])
+
+  // WebSocket connection for real-time updates
+  const { isConnected, sendTyping, markRead } = useWebSocket({
+    conversationId: id,
+    onMessage: handleWebSocketMessage,
+    onTyping: handleTyping,
+    onRead: handleRead,
+  })
 
   useEffect(() => {
     if (id) {
@@ -25,6 +62,34 @@ export default function ConversationPage() {
     }
   }, [id])
 
+  // Fallback polling only if WebSocket is not connected
+  useEffect(() => {
+    if (!id || isConnected) return
+
+    const pollInterval = setInterval(() => {
+      fetchMessagesQuietly()
+    }, 15000)
+
+    return () => clearInterval(pollInterval)
+  }, [id, isConnected])
+
+  const fetchMessagesQuietly = async () => {
+    if (!id) return
+    try {
+      const response = await messagesApi.getMessages(id)
+      const newMessages = (response.data || []).reverse()
+      // Use callback form to avoid stale closure issue
+      setMessages((prev) => {
+        if (newMessages.length > prev.length) {
+          return newMessages
+        }
+        return prev
+      })
+    } catch (error) {
+      console.error('Poll failed:', error)
+    }
+  }
+
   useEffect(() => {
     scrollToBottom()
   }, [messages])
@@ -32,9 +97,13 @@ export default function ConversationPage() {
   useEffect(() => {
     // Mark as read when viewing
     if (id && conversation && conversation.unreadCount > 0) {
-      messagesApi.markAsRead(id).catch(console.error)
+      if (isConnected) {
+        markRead()
+      } else {
+        messagesApi.markAsRead(id).catch(console.error)
+      }
     }
-  }, [id, conversation])
+  }, [id, conversation, isConnected, markRead])
 
   const fetchConversation = async () => {
     if (!id) return
@@ -52,7 +121,6 @@ export default function ConversationPage() {
     setIsLoading(true)
     try {
       const response = await messagesApi.getMessages(id)
-      // Messages come in DESC order, reverse for display
       setMessages((response.data || []).reverse())
     } catch (error) {
       console.error('Failed to fetch messages:', error)
@@ -68,16 +136,38 @@ export default function ConversationPage() {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newMessage.trim() || !id) return
+    console.log('[ConversationPage] handleSend triggered', { newMessage, id, isSending })
 
+    if (!newMessage.trim() || !id || isSending) {
+      console.log('[ConversationPage] Early return - validation failed')
+      return
+    }
+
+    const messageContent = newMessage.trim()
+    setNewMessage('')
     setIsSending(true)
+    inputRef.current?.focus()
+
     try {
-      const message = await messagesApi.sendMessage(id, newMessage.trim())
-      setMessages((prev) => [...prev, message])
-      setNewMessage('')
-      inputRef.current?.focus()
+      console.log('[ConversationPage] Sending message via API...')
+      const message = await messagesApi.sendMessage(id, messageContent)
+      console.log('[ConversationPage] API response:', message)
+
+      setMessages((prev) => {
+        console.log('[ConversationPage] Previous messages count:', prev.length)
+        // Avoid duplicates (WebSocket might have already added it)
+        if (prev.some((m) => m.id === message.id)) {
+          console.log('[ConversationPage] Message already exists, skipping')
+          return prev
+        }
+        const updated = [...prev, message]
+        console.log('[ConversationPage] Updated messages count:', updated.length)
+        return updated
+      })
     } catch (error) {
+      console.error('[ConversationPage] Failed to send message:', error)
       toast.error('Failed to send message')
+      setNewMessage(messageContent) // Restore message on failure
     } finally {
       setIsSending(false)
     }
@@ -90,13 +180,26 @@ export default function ConversationPage() {
     }
   }
 
-  const formatTime = (dateStr: string) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewMessage(e.target.value)
+    // Send typing indicator (debounced via WebSocket)
+    if (isConnected) {
+      sendTyping()
+    }
+  }
+
+  const formatTime = (dateStr: string | null | undefined) => {
+    if (!dateStr) return ''
     const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return ''
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
   }
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'Today'
     const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return 'Today'
+
     const today = new Date()
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
@@ -116,8 +219,11 @@ export default function ConversationPage() {
 
   const shouldShowDate = (index: number) => {
     if (index === 0) return true
-    const current = new Date(messages[index].createdAt).toDateString()
-    const previous = new Date(messages[index - 1].createdAt).toDateString()
+    const currentDate = messages[index].createdAt
+    const previousDate = messages[index - 1].createdAt
+    if (!currentDate || !previousDate) return false
+    const current = new Date(currentDate).toDateString()
+    const previous = new Date(previousDate).toDateString()
     return current !== previous
   }
 
@@ -173,12 +279,17 @@ export default function ConversationPage() {
                 <span className="ml-1 text-green-600 text-sm">✓</span>
               )}
             </p>
-            <Link
-              to={`/listings/${conversation.listing.id}`}
-              className="text-sm text-primary-600 hover:text-primary-700 truncate block"
-            >
-              {conversation.listing.title}
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                to={`/listings/${conversation.listing.id}`}
+                className="text-sm text-primary-600 hover:text-primary-700 truncate"
+              >
+                {conversation.listing.title}
+              </Link>
+              {isConnected && (
+                <span className="w-2 h-2 bg-green-500 rounded-full" title="Real-time connected" />
+              )}
+            </div>
           </div>
 
           {conversation.bookingId && (
@@ -253,6 +364,16 @@ export default function ConversationPage() {
             )
           })
         )}
+
+        {/* Typing indicator */}
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 px-4 py-2 rounded-2xl">
+              <p className="text-sm text-gray-500">{isTyping} is typing...</p>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -262,7 +383,7 @@ export default function ConversationPage() {
           <textarea
             ref={inputRef}
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             rows={1}

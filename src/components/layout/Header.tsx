@@ -1,6 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { Heart } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import NotificationBell from '../notifications/NotificationBell'
 import clsx from 'clsx'
 
 export default function Header() {
@@ -39,6 +41,7 @@ export default function Header() {
                 <Link to="/messages" className="text-gray-600 hover:text-gray-900">
                   Messages
                 </Link>
+                <NotificationBell />
                 <div className="relative">
                   <button
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -66,6 +69,14 @@ export default function Header() {
                         onClick={() => setIsMenuOpen(false)}
                       >
                         Profile
+                      </Link>
+                      <Link
+                        to="/favorites"
+                        className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Heart size={16} />
+                        Favorites
                       </Link>
                       <Link
                         to="/settings"
@@ -164,6 +175,21 @@ export default function Header() {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Messages
+                </Link>
+                <Link
+                  to="/notifications"
+                  className="block px-3 py-2 text-gray-600 hover:text-gray-900"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Notifications
+                </Link>
+                <Link
+                  to="/favorites"
+                  className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Heart size={16} />
+                  Favorites
                 </Link>
                 <Link
                   to="/profile"

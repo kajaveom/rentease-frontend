@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Package } from 'lucide-react'
 import { usersApi } from '../../api/users'
 import { listingsApi } from '../../api/listings'
 import { reviewsApi } from '../../api/reviews'
@@ -168,7 +169,7 @@ export default function ProfilePage() {
         <div>
           {listings.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">📦</div>
+              <div className="text-gray-300 mb-4 flex justify-center"><Package size={80} /></div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">No listings yet</h2>
               <p className="text-gray-600 mb-6">Start earning by listing your items for rent</p>
               <Link to="/listings/new">
@@ -191,8 +192,8 @@ export default function ProfilePage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <span className="text-4xl">📦</span>
+                      <div className="w-full h-full flex items-center justify-center text-gray-300">
+                        <Package size={48} />
                       </div>
                     )}
                     {!listing.available && (

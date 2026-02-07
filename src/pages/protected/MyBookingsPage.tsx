@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { Package } from 'lucide-react'
 import { bookingsApi } from '../../api/bookings'
-import { Booking, BOOKING_STATUS_LABELS, BOOKING_STATUS_COLORS, BookingStatus } from '../../types/booking'
+import { Booking, BOOKING_STATUS_LABELS, BOOKING_STATUS_COLORS } from '../../types/booking'
 import Button from '../../components/common/Button'
 import Spinner from '../../components/common/Spinner'
 import toast from 'react-hot-toast'
@@ -125,8 +126,8 @@ export default function MyBookingsPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      <span className="text-2xl">📦</span>
+                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                      <Package size={32} />
                     </div>
                   )}
                 </div>
@@ -155,7 +156,7 @@ export default function MyBookingsPage() {
                         {BOOKING_STATUS_LABELS[booking.status]}
                       </span>
                       <p className="font-semibold text-gray-900 mt-2">
-                        {formatPrice(booking.totalPrice + (booking.serviceFee || 0))}
+                        {formatPrice(booking.totalPrice)}
                       </p>
                     </div>
                   </div>

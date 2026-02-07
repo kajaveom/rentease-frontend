@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Package } from 'lucide-react'
 import { Review } from '../../types/review'
 import { reviewsApi } from '../../api/reviews'
 import Button from '../common/Button'
@@ -106,7 +107,9 @@ export default function ReviewCard({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-xs">📦</div>
+              <div className="w-full h-full flex items-center justify-center text-gray-300">
+                <Package size={16} />
+              </div>
             )}
           </div>
           <span className="truncate">{review.listing.title}</span>

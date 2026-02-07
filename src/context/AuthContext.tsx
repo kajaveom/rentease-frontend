@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 
 interface AuthContextType {
   user: User | null
+  token: string | null
   isLoading: boolean
   isAuthenticated: boolean
   login: (data: LoginRequest) => Promise<void>
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -32,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (accessToken && storedUser) {
         try {
           setUser(JSON.parse(storedUser))
+          setToken(accessToken)
         } catch {
           localStorage.removeItem('accessToken')
           localStorage.removeItem('refreshToken')
@@ -50,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('refreshToken', response.refreshToken)
     localStorage.setItem('user', JSON.stringify(response.user))
     setUser(response.user)
+    setToken(response.accessToken)
     toast.success('Welcome back!')
   }
 
@@ -59,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('refreshToken', response.refreshToken)
     localStorage.setItem('user', JSON.stringify(response.user))
     setUser(response.user)
+    setToken(response.accessToken)
     toast.success('Account created successfully!')
   }
 
@@ -68,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('refreshToken', response.refreshToken)
     localStorage.setItem('user', JSON.stringify(response.user))
     setUser(response.user)
+    setToken(response.accessToken)
     toast.success('Welcome!')
   }
 
@@ -75,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authApi.logout()
     localStorage.removeItem('user')
     setUser(null)
+    setToken(null)
     toast.success('Logged out successfully')
   }
 
@@ -97,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        token,
         isLoading,
         isAuthenticated: !!user,
         login,

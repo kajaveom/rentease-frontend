@@ -1,17 +1,26 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import { Package } from 'lucide-react'
 import { messagesApi } from '../../api/messages'
 import { Conversation } from '../../types/message'
 import Spinner from '../../components/common/Spinner'
 import toast from 'react-hot-toast'
 
 export default function MessagesPage() {
-  const navigate = useNavigate()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     fetchConversations()
+  }, [])
+
+  // Poll for new conversations/updates every 20 seconds
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      fetchConversationsQuietly()
+    }, 20000)
+
+    return () => clearInterval(pollInterval)
   }, [])
 
   const fetchConversations = async () => {
@@ -24,6 +33,15 @@ export default function MessagesPage() {
       toast.error('Failed to load messages')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchConversationsQuietly = async () => {
+    try {
+      const response = await messagesApi.getConversations()
+      setConversations(response.data || [])
+    } catch (error) {
+      console.error('Poll failed:', error)
     }
   }
 
@@ -137,8 +155,8 @@ export default function MessagesPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      <span>📦</span>
+                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                      <Package size={24} />
                     </div>
                   )}
                 </div>

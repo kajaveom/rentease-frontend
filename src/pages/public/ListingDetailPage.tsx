@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { Package } from 'lucide-react'
 import { listingsApi } from '../../api/listings'
 import { messagesApi } from '../../api/messages'
+import { favoritesApi } from '../../api/favorites'
 import { Listing, CONDITIONS } from '../../types/listing'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Spinner from '../../components/common/Spinner'
+import FavoriteButton from '../../components/common/FavoriteButton'
 import ReviewList from '../../components/review/ReviewList'
 import toast from 'react-hot-toast'
 
@@ -18,7 +21,9 @@ export default function ListingDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0)
   const [showContactModal, setShowContactModal] = useState(false)
   const [contactMessage, setContactMessage] = useState('')
+  const [hasInitializedMessage, setHasInitializedMessage] = useState(false)
   const [isSendingMessage, setIsSendingMessage] = useState(false)
+  const [isFavorited, setIsFavorited] = useState(false)
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -36,6 +41,19 @@ export default function ListingDetailPage() {
 
     fetchListing()
   }, [id])
+
+  useEffect(() => {
+    const checkFavorite = async () => {
+      if (!id || !isAuthenticated) return
+      try {
+        const favorited = await favoritesApi.checkFavorite(id)
+        setIsFavorited(favorited)
+      } catch (error) {
+        // Ignore errors - not critical
+      }
+    }
+    checkFavorite()
+  }, [id, isAuthenticated])
 
   const handleContactOwner = async () => {
     if (!listing || !contactMessage.trim()) return
@@ -107,8 +125,8 @@ export default function ListingDetailPage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                <span className="text-6xl">📦</span>
+              <div className="w-full h-full flex items-center justify-center text-gray-300">
+                <Package size={80} />
               </div>
             )}
           </div>
@@ -135,7 +153,17 @@ export default function ListingDetailPage() {
 
         {/* Details */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{listing.title}</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-2xl font-bold text-gray-900">{listing.title}</h1>
+            {!isOwner && (
+              <FavoriteButton
+                listingId={listing.id}
+                initialFavorited={isFavorited}
+                size="lg"
+                onToggle={setIsFavorited}
+              />
+            )}
+          </div>
 
           <div className="flex items-center gap-4 mt-2">
             <span className="text-sm text-gray-600">{listing.pickupLocation}</span>
@@ -169,7 +197,15 @@ export default function ListingDetailPage() {
                     <Button
                       variant="secondary"
                       className="w-full"
-                      onClick={() => setShowContactModal(true)}
+                      onClick={() => {
+                        if (!hasInitializedMessage && listing) {
+                          setContactMessage(
+                            `Hi ${listing.owner.firstName}! I'm interested in renting your "${listing.title}" (${formatPrice(listing.pricePerDay)}/day). Is it available?`
+                          )
+                          setHasInitializedMessage(true)
+                        }
+                        setShowContactModal(true)
+                      }}
                     >
                       Contact Owner
                     </Button>
@@ -270,7 +306,7 @@ export default function ListingDetailPage() {
             <textarea
               value={contactMessage}
               onChange={(e) => setContactMessage(e.target.value)}
-              placeholder="Hi! I'm interested in renting this item..."
+              placeholder="Write your message..."
               rows={4}
               className="input w-full mb-4"
               maxLength={500}

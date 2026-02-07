@@ -79,13 +79,13 @@ export interface UpdateListingRequest {
   imageUrls?: string[]
 }
 
-export const CATEGORIES: { label: string; value: Category; icon: string }[] = [
-  { label: 'Cameras', value: 'CAMERA_BODY', icon: '📷' },
-  { label: 'Lenses', value: 'LENS', icon: '🔭' },
-  { label: 'Lighting', value: 'LIGHTING', icon: '💡' },
-  { label: 'Audio', value: 'AUDIO', icon: '🎤' },
-  { label: 'Drones', value: 'DRONE', icon: '🚁' },
-  { label: 'Accessories', value: 'ACCESSORY', icon: '🎒' },
+export const CATEGORIES: { label: string; value: Category }[] = [
+  { label: 'Cameras', value: 'CAMERA_BODY' },
+  { label: 'Lenses', value: 'LENS' },
+  { label: 'Lighting', value: 'LIGHTING' },
+  { label: 'Audio', value: 'AUDIO' },
+  { label: 'Drones', value: 'DRONE' },
+  { label: 'Accessories', value: 'ACCESSORY' },
 ]
 
 export const CONDITIONS: { label: string; value: Condition; description: string }[] = [

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { Package } from 'lucide-react'
 import { usersApi } from '../../api/users'
 import { PublicProfile } from '../../types/user'
 import { ListingSummary } from '../../types/listing'
@@ -28,14 +29,24 @@ export default function PublicProfilePage() {
     if (!id) return
     setIsLoading(true)
     try {
-      const [profileData, listingsData, reviewsData] = await Promise.all([
-        usersApi.getPublicProfile(id),
-        usersApi.getUserListings(id),
-        usersApi.getUserReviews(id),
-      ])
+      // Fetch profile first - if this fails, user doesn't exist
+      const profileData = await usersApi.getPublicProfile(id)
       setProfile(profileData)
-      setListings(listingsData.data || [])
-      setReviews(reviewsData.data || [])
+
+      // Then fetch listings and reviews (these can fail gracefully)
+      try {
+        const [listingsData, reviewsData] = await Promise.all([
+          usersApi.getUserListings(id),
+          usersApi.getUserReviews(id),
+        ])
+        setListings(listingsData.data || [])
+        setReviews(reviewsData.data || [])
+      } catch (secondaryError) {
+        console.error('Failed to fetch listings/reviews:', secondaryError)
+        // Profile exists, just couldn't load listings/reviews
+        setListings([])
+        setReviews([])
+      }
     } catch (error) {
       console.error('Failed to fetch profile:', error)
       toast.error('Failed to load profile')
@@ -184,8 +195,8 @@ export default function PublicProfilePage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <span className="text-4xl">📦</span>
+                      <div className="w-full h-full flex items-center justify-center text-gray-300">
+                        <Package size={48} />
                       </div>
                     )}
                   </div>

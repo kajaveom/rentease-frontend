@@ -26,6 +26,8 @@ import ProfilePage from './pages/protected/ProfilePage'
 import EditProfilePage from './pages/protected/EditProfilePage'
 import SettingsPage from './pages/protected/SettingsPage'
 import VerifyIdPage from './pages/protected/VerifyIdPage'
+import NotificationsPage from './pages/protected/NotificationsPage'
+import FavoritesPage from './pages/protected/FavoritesPage'
 
 function App() {
   return (
@@ -150,6 +152,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <VerifyIdPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/favorites"
+            element={
+              <ProtectedRoute>
+                <FavoritesPage />
               </ProtectedRoute>
             }
           />

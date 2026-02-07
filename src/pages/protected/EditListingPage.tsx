@@ -153,7 +153,7 @@ export default function EditListingPage() {
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat.value} value={cat.value}>
-                    {cat.icon} {cat.label}
+                    {cat.label}
                   </option>
                 ))}
               </select>

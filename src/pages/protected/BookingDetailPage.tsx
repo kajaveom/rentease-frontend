@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { Package } from 'lucide-react'
 import { bookingsApi } from '../../api/bookings'
 import { reviewsApi } from '../../api/reviews'
 import { Booking, BOOKING_STATUS_LABELS, BOOKING_STATUS_COLORS } from '../../types/booking'
@@ -215,8 +216,8 @@ export default function BookingDetailPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <span className="text-2xl">📦</span>
+                  <div className="w-full h-full flex items-center justify-center text-gray-300">
+                    <Package size={32} />
                   </div>
                 )}
               </div>
@@ -357,29 +358,24 @@ export default function BookingDetailPage() {
         {/* Sidebar - Pricing & Actions */}
         <div className="md:col-span-1">
           <div className="card p-6 sticky top-4">
-            <h2 className="font-semibold text-gray-900 mb-4">Payment Summary</h2>
+            <h2 className="font-semibold text-gray-900 mb-4">Pricing Details</h2>
 
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">
-                  {formatPrice(booking.dailyRate)} x {booking.totalDays} days
-                </span>
-                <span className="text-gray-900">{formatPrice(booking.totalPrice)}</span>
+                <span className="text-gray-600">Daily rate</span>
+                <span className="text-gray-900">{formatPrice(booking.dailyRate)}/day</span>
               </div>
-              {booking.serviceFee > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Service fee</span>
-                  <span className="text-gray-900">{formatPrice(booking.serviceFee)}</span>
-                </div>
-              )}
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Security deposit</span>
-                <span className="text-gray-900">{formatPrice(booking.depositAmount)}</span>
+                <span className="text-gray-600">Duration</span>
+                <span className="text-gray-900">{booking.totalDays} {booking.totalDays === 1 ? 'day' : 'days'}</span>
               </div>
               <div className="border-t pt-3 flex justify-between font-semibold">
-                <span>Total</span>
-                <span>{formatPrice(booking.totalPrice + (booking.serviceFee || 0))}</span>
+                <span>Estimated Total</span>
+                <span>{formatPrice(booking.totalPrice)}</span>
               </div>
+              <p className="text-xs text-gray-500">
+                Payment arranged directly with owner
+              </p>
             </div>
 
             {/* Actions */}
@@ -405,7 +401,7 @@ export default function BookingDetailPage() {
                 </>
               )}
 
-              {isOwner && booking.status === 'PAID' && (
+              {isOwner && booking.status === 'APPROVED' && (
                 <Button
                   className="w-full"
                   onClick={handleStart}
@@ -427,7 +423,12 @@ export default function BookingDetailPage() {
 
               {/* Renter Actions */}
               {isRenter && booking.status === 'APPROVED' && (
-                <Button className="w-full">Pay Now</Button>
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+                  <p className="text-sm text-green-800 font-medium">Booking Approved!</p>
+                  <p className="text-xs text-green-700 mt-1">
+                    Contact the owner to arrange pickup.
+                  </p>
+                </div>
               )}
 
               {/* Cancel (available to both) */}
@@ -462,12 +463,6 @@ export default function BookingDetailPage() {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Approved</span>
                     <span className="text-gray-900">{formatDateTime(booking.approvedAt)}</span>
-                  </div>
-                )}
-                {booking.paidAt && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Paid</span>
-                    <span className="text-gray-900">{formatDateTime(booking.paidAt)}</span>
                   </div>
                 )}
                 {booking.completedAt && (
